@@ -1,3 +1,7 @@
+#ifdef PLATFORM_WINDOWS
+#include <WinSock2.h>
+#endif
+
 #include "decaf.h"
 #include "decaf_config.h"
 #include "decaf_graphics.h"
@@ -25,10 +29,6 @@
 #include <condition_variable>
 #include <fmt/format.h>
 #include <mutex>
-
-#ifdef PLATFORM_WINDOWS
-#include <WinSock2.h>
-#endif
 
 namespace decaf
 {

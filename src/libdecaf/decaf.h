@@ -1,7 +1,6 @@
 #pragma once
 #include <string>
 #include <vector>
-#include <spdlog/spdlog.h>
 #include "decaf_config.h"
 #include "decaf_debugger.h"
 #include "decaf_eventlistener.h"

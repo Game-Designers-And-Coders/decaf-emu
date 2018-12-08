@@ -18,9 +18,6 @@
 #include <libdecaf/src/cafe/libraries/gx2/gx2_internal_gfd.h>
 #include <spdlog/spdlog.h>
 
-std::shared_ptr<spdlog::logger>
-gLog;
-
 struct OutputState
 {
    fmt::memory_buffer writer;

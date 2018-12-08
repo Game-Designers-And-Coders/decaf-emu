@@ -10,6 +10,7 @@
 #include <common/debuglog.h>
 #include <common/decaf_assert.h>
 #include <fmt/format.h>
+#include <mutex>
 
 using espresso::Instruction;
 using espresso::InstructionID;
