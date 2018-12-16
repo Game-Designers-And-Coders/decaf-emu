@@ -41,7 +41,7 @@ install:
   -  if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 90; fi
   -  if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 90; fi
   -  if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then mkdir $HOME/vulkan; cd $HOME/vulkan; wget https://sdk.lunarg.com/sdk/download/1.1.92.1/linux/vulkansdk-linux-x86_64-1.1.92.1.tar.gz; tar zxf vulkansdk-linux-x86_64-1.1.92.1.tar.gz; fi
-  -  if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then pip install conan; fi
+  -  if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then pip install --user conan; fi
   -  if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then conan user; fi
   -  if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then cd "$TRAVIS_BUILD_DIR/cbuild"; conan install .. --build=missing -o silent=True -o ffmpeg=True -o curl=False -o openssl=False -o sdl2=False -o zlib=False; fi
   -  if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install curl openssl sdl2; fi
