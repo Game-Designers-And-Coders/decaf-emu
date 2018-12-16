@@ -19,8 +19,6 @@ addons:
       - libglbinding-dbg
       - libglbinding-dev
       - libglu1-mesa-dev
-      - libsdl2-dev
-      - libssl-dev
       - libswscale-dev
       - libx11-dev
       - libxcb-icccm4-dev
@@ -30,7 +28,6 @@ addons:
       - libxrandr-dev
       - libxxf86vm-dev
       - xorg-dev
-      - zlib1g-dev
 
 language: cpp
 
@@ -48,7 +45,7 @@ install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then pip install --user conan; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then conan user; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then conan remote add bincrafters https://api.bintray.com/conan/bincrafters/public-conan || true; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then cd "$TRAVIS_BUILD_DIR/cbuild"; conan install .. --build=missing -o silent=True -o ffmpeg=True -o curl=False -o openssl=False -o sdl2=False -o zlib=False; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then cd "$TRAVIS_BUILD_DIR/cbuild"; conan install .. --build=missing -o silent=True; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install curl openssl sdl2; fi
 
 script:
