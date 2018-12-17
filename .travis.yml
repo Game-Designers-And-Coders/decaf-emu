@@ -23,6 +23,8 @@ addons:
       - libglu1-mesa-dev
       - libjack-dev
       - libpulse-dev
+      - libssl-dev
+      - libva-dev
       - libx11-dev
       - libxcb-icccm4-dev
       - libxcb-keysyms1-dev
@@ -48,7 +50,7 @@ install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then pip install --user conan; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then conan user; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then conan remote add bincrafters https://api.bintray.com/conan/bincrafters/public-conan || true; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then cd "$TRAVIS_BUILD_DIR/cbuild"; conan install .. --build=missing -o silent=True; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then cd "$TRAVIS_BUILD_DIR/cbuild"; conan install .. --build=missing -o silent=True -o openssl=False; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install curl openssl sdl2; fi
 
 script:
