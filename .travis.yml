@@ -17,6 +17,7 @@ addons:
       - binutils-2.26
       - g++-7
       - gcc-7
+      - libasound2-dev
       - libglbinding-dbg
       - libglbinding-dev
       - libglu1-mesa-dev
