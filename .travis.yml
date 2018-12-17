@@ -22,6 +22,7 @@ addons:
       - libglbinding-dev
       - libglu1-mesa-dev
       - libjack-dev
+      - libpulse-dev
       - libx11-dev
       - libxcb-icccm4-dev
       - libxcb-keysyms1-dev
