@@ -18,6 +18,7 @@ addons:
       - g++-7
       - gcc-7
       - libasound2-dev
+      - libcurl-dev
       - libglbinding-dbg
       - libglbinding-dev
       - libglu1-mesa-dev
@@ -25,6 +26,7 @@ addons:
       - libpulse-dev
       - libssl-dev
       - libva-dev
+      - libvdpau-dev
       - libx11-dev
       - libxcb-icccm4-dev
       - libxcb-keysyms1-dev
@@ -50,7 +52,7 @@ install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then pip install --user conan; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then conan user; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then conan remote add bincrafters https://api.bintray.com/conan/bincrafters/public-conan || true; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then cd "$TRAVIS_BUILD_DIR/cbuild"; conan install .. --build=missing -o silent=True -o openssl=False; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then cd "$TRAVIS_BUILD_DIR/cbuild"; conan install .. --build=missing -o silent=True -o curl=False -o openssl=False; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install curl openssl sdl2; fi
 
 script:
