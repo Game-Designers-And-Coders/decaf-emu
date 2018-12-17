@@ -18,7 +18,7 @@ addons:
       - g++-7
       - gcc-7
       - libasound2-dev
-      - libcurl-dev
+      - libcurl4-openssl-dev
       - libglbinding-dbg
       - libglbinding-dev
       - libglu1-mesa-dev
