@@ -51,17 +51,30 @@
 #include "ui_mainwindow.h"
 #include <QMainWindow>
 
+class DecafInterface;
+class VulkanWindow;
+class QVulkanInstance;
+class InputDriver;
+
 class MainWindow : public QMainWindow
 {
    Q_OBJECT
 
 public:
-   explicit MainWindow(class QVulkanInstance *vulkanInstance, QWidget* parent = nullptr);
+   explicit MainWindow(QVulkanInstance *vulkanInstance, DecafInterface *decafInterface, InputDriver *inputDriver, QWidget* parent = nullptr);
 
 private slots:
-   void openInputSettings();
+   void titleLoaded(quint64 id, const QString &name);
+
+   void menuOpenInputSettings();
+   void menuOpenFile();
+
+protected:
+   void closeEvent(QCloseEvent *event) override;
 
 private:
-   class VulkanWindow *mVulkanWindow;
+   VulkanWindow *mVulkanWindow;
+   DecafInterface *mDecafInterface;
+   InputDriver *mInputDriver;
    Ui::MainWindow mUi;
 };

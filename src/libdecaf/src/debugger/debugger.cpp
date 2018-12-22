@@ -36,7 +36,10 @@ initialise(const std::string &config,
 void
 shutdown()
 {
-   ImGui::DestroyContext();
+   if (ImGui::GetCurrentContext()) {
+      ImGui::DestroyContext();
+   }
+
    // Force resume any paused cores.
    sController.resume();
 }

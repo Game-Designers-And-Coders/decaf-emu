@@ -30,7 +30,7 @@ target_link_libraries(decaf-qt
    libdecaf
    ${CPPTOML_LIBRARIES}
    ${EXCMD_LIBRARIES}
-   ${SDL2_LINK}
+   ${SDL2_LIBRARIES}
    Qt5::Widgets
    Qt5::WinMain)
 

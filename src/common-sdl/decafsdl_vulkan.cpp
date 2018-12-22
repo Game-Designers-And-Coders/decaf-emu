@@ -426,7 +426,6 @@ DecafSDLVulkan::createSwapChain()
 
    // Create our framebuffers
    auto swapChainImages = mDevice.getSwapchainImagesKHR(mSwapchain);
-
    mSwapChainImageViews.resize(swapChainImages.size());
    mFramebuffers.resize(swapChainImages.size());
 

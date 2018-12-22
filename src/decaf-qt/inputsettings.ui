@@ -140,7 +140,7 @@
       <enum>Qt::Horizontal</enum>
      </property>
      <property name="standardButtons">
-      <set>QDialogButtonBox::Apply|QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+      <set>QDialogButtonBox::Apply|QDialogButtonBox::Cancel|QDialogButtonBox::Ok|QDialogButtonBox::Reset</set>
      </property>
     </widget>
    </item>
@@ -150,9 +150,9 @@
  <connections>
   <connection>
    <sender>buttonBox</sender>
-   <signal>accepted()</signal>
+   <signal>clicked(QAbstractButton*)</signal>
    <receiver>InputSettings</receiver>
-   <slot>accept()</slot>
+   <slot>buttonBoxClicked(QAbstractButton*)</slot>
    <hints>
     <hint type="sourcelabel">
      <x>248</x>
@@ -160,22 +160,6 @@
     </hint>
     <hint type="destinationlabel">
      <x>157</x>
-     <y>274</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>buttonBox</sender>
-   <signal>rejected()</signal>
-   <receiver>InputSettings</receiver>
-   <slot>reject()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>316</x>
-     <y>260</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>286</x>
      <y>274</y>
     </hint>
    </hints>
@@ -250,5 +234,6 @@
   <slot>removeController()</slot>
   <slot>controllerTypeChanged(int)</slot>
   <slot>editController(int)</slot>
+  <slot>buttonBoxClicked(QAbstractButton*)</slot>
  </slots>
 </ui>

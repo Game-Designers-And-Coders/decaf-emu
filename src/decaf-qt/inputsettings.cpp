@@ -1,6 +1,7 @@
+#pragma optimize("", off)
 #include "inputsettings.h"
 #include "inputeventfilter.h"
-#include "sdleventloop.h"
+#include "inputdriver.h"
 
 #include <QStandardItemModel>
 
@@ -68,49 +69,100 @@ getButtonName(ButtonType type)
    }
 }
 
-InputSettings::InputSettings(QWidget *parent, Qt::WindowFlags f) :
-   QDialog(parent, f)
+InputSettings::InputSettings(InputDriver *inputDriver, QWidget *parent, Qt::WindowFlags f) :
+   QDialog(parent, f),
+   mInputDriver(inputDriver)
 {
    mUi.setupUi(this);
    mInputEventFilter = new InputEventFilter(this);
-   mSdlEventLoop = new SdlEventLoop(this);
    qApp->installEventFilter(mInputEventFilter);
    connect(mInputEventFilter, &InputEventFilter::caughtKeyPress, this, &InputSettings::caughtKeyPress);
-   connect(mSdlEventLoop, &SdlEventLoop::joystickConnected, this, &InputSettings::joystickConnected);
-   connect(mSdlEventLoop, &SdlEventLoop::joystickDisconnected, this, &InputSettings::joystickDisconnected);
-   connect(mSdlEventLoop, &SdlEventLoop::joystickButtonDown, this, &InputSettings::joystickButton);
-   connect(mSdlEventLoop, &SdlEventLoop::joystickAxisMotion, this, &InputSettings::joystickAxisMotion);
-   connect(mSdlEventLoop, &SdlEventLoop::joystickHatMotion, this, &InputSettings::joystickHatMotion);
+   connect(mInputDriver, &InputDriver::joystickConnected, this, &InputSettings::joystickConnected);
+   connect(mInputDriver, &InputDriver::joystickDisconnected, this, &InputSettings::joystickDisconnected);
+   connect(mInputDriver, &InputDriver::joystickButtonDown, this, &InputSettings::joystickButton);
+   connect(mInputDriver, &InputDriver::joystickAxisMotion, this, &InputSettings::joystickAxisMotion);
+   connect(mInputDriver, &InputDriver::joystickHatMotion, this, &InputSettings::joystickHatMotion);
 }
 
 InputSettings::~InputSettings()
 {
 }
 
+void InputSettings::showEvent(QShowEvent *ev)
+{
+   mInputConfiguration = mInputDriver->getInputConfiguration();
+   updateControllerListFromConfiguration();
+   QDialog::showEvent(ev);
+}
+
 void InputSettings::addController()
 {
-   auto item = new QListWidgetItem(QString("New Controller %1").arg(mControllers.size()));
+   auto id = mInputConfiguration.controllers.size();
+   mInputConfiguration.controllers.push_back({});
+
+   auto item = new QListWidgetItem(QString("New Controller %1").arg(id));
    mUi.controllerList->addItem(item);
    mUi.controllerList->setCurrentItem(item);
-   mControllers.push_back({});
 }
 
 void InputSettings::removeController()
 {
-   mControllers.removeAt(mUi.controllerList->currentRow());
+   mInputConfiguration.controllers.erase(mInputConfiguration.controllers.begin() + mUi.controllerList->currentRow());
+   delete mUi.controllerList->takeItem(mUi.controllerList->currentRow());
+}
+
+void InputSettings::updateControllerListFromConfiguration()
+{
+   mUi.controllerList->setUpdatesEnabled(false);
+   mUi.controllerList->clear();
+
+   auto index = 0;
+   auto gamepad = 0;
+   auto wiimote = 0;
+   auto pro = 0;
+   auto classic = 0;
+
+   for (auto &controller : mInputConfiguration.controllers) {
+      switch (controller.type) {
+      case ControllerType::Invalid:
+         mUi.controllerList->addItem(QString("New Controller %1").arg(index));
+         break;
+      case ControllerType::Gamepad:
+         mUi.controllerList->addItem(QString("Gamepad %1").arg(gamepad++));
+         break;
+      case ControllerType::WiiMote:
+         mUi.controllerList->addItem(QString("Wiimote %1").arg(wiimote++));
+         break;
+      case ControllerType::ProController:
+         mUi.controllerList->addItem(QString("Pro Controller %1").arg(pro++));
+         break;
+      case ControllerType::ClassicController:
+         mUi.controllerList->addItem(QString("Classic Controller %1").arg(classic++));
+         break;
+      }
+
+      ++index;
+   }
+
+   mUi.controllerList->setUpdatesEnabled(true);
 }
 
 void InputSettings::editController(int index)
 {
-   auto &controller = mControllers[index];
+   if (index == -1) {
+      mUi.controllerType->clear();
+      return;
+   }
 
+   auto type = mInputConfiguration.controllers[index].type;
    mUi.controllerType->setUpdatesEnabled(false);
    mUi.controllerType->clear();
-   mUi.controllerType->addItem("Wii U Gamepad", QVariant::fromValue(static_cast<int>(Controller::Gamepad)));
-   mUi.controllerType->addItem("Wiimote", QVariant::fromValue(static_cast<int>(Controller::WiiMote)));
-   mUi.controllerType->addItem("Classic Controller", QVariant::fromValue(static_cast<int>(Controller::ClassicController)));
-   mUi.controllerType->addItem("Pro Controller", QVariant::fromValue(static_cast<int>(Controller::ProController)));
-   mUi.controllerType->setCurrentIndex(0);
+   mUi.controllerType->addItem("Unconfigured", QVariant::fromValue(static_cast<int>(ControllerType::Invalid)));
+   mUi.controllerType->addItem("Wii U Gamepad", QVariant::fromValue(static_cast<int>(ControllerType::Gamepad)));
+   mUi.controllerType->addItem("Wiimote", QVariant::fromValue(static_cast<int>(ControllerType::WiiMote)));
+   mUi.controllerType->addItem("Pro Controller", QVariant::fromValue(static_cast<int>(ControllerType::ProController)));
+   mUi.controllerType->addItem("Classic Controller", QVariant::fromValue(static_cast<int>(ControllerType::ClassicController)));
+   mUi.controllerType->setCurrentIndex(mUi.controllerType->findData(QVariant::fromValue(static_cast<int>(type))));
    mUi.controllerType->setUpdatesEnabled(true);
 }
 
@@ -122,14 +174,53 @@ void InputSettings::assignButton(QPushButton *button, ButtonType type)
       }
 
       mInputEventFilter->enable();
-      mSdlEventLoop->enableButtonEvents();
+      mInputDriver->enableButtonEvents();
       mAssignButtonType = type;
       mAssignButton = button;
    } else if (mAssignButton == button) {
       mAssignButtonType = type;
       mAssignButton = nullptr;
       mInputEventFilter->disable();
-      mSdlEventLoop->disableButtonEvents();
+      mInputDriver->disableButtonEvents();
+   }
+}
+
+static QString
+inputToText(const InputConfiguration::Input &input)
+{
+   switch (input.source) {
+   case InputConfiguration::Input::KeyboardKey:
+      return QString("Keyboard key %1")
+         .arg(QKeySequence(input.id).toString());
+   case InputConfiguration::Input::JoystickButton:
+      return QString("Joystick %1 button %2")
+         .arg(input.joystickInstanceId)
+         .arg(input.id);
+   case InputConfiguration::Input::JoystickAxis:
+      return QString("Joystick %1 axis %2 %3")
+         .arg(input.joystickInstanceId)
+         .arg(input.id)
+         .arg(input.invert ? "negative" : "positive");
+   case InputConfiguration::Input::JoystickHat:
+   {
+      const char *direction = "";
+      if (input.hatValue == SDL_HAT_UP) {
+         direction = "up";
+      } else if (input.hatValue == SDL_HAT_LEFT) {
+         direction = "left";
+      } else if (input.hatValue == SDL_HAT_RIGHT) {
+         direction = "right";
+      } else if (input.hatValue == SDL_HAT_DOWN) {
+         direction = "down";
+      }
+
+      return QString("Joystick %1 Hat %2 %3")
+         .arg(input.joystickInstanceId)
+         .arg(input.id)
+         .arg(direction);
+   }
+   default:
+      return {};
    }
 }
 
@@ -137,7 +228,13 @@ void InputSettings::caughtKeyPress(int key)
 {
    // TODO: Assign mAssignButtonType to key!
    if (mAssignButton) {
-      mAssignButton->setText(QString("Keyboard Key %1").arg(QKeySequence(key).toString()));
+      auto index = mUi.controllerList->currentIndex().row();
+      auto &controller = mInputConfiguration.controllers[index];
+      auto &input = controller.inputs[static_cast<size_t>(mAssignButtonType)];
+      input.source = InputConfiguration::Input::KeyboardKey;
+      input.id = key;
+
+      mAssignButton->setText(inputToText(input));
       mAssignButton->setChecked(false);
    }
 }
@@ -147,34 +244,49 @@ void InputSettings::joystickConnected(SDL_JoystickID id, SDL_JoystickGUID guid, 
    mJoysticks.push_back({ id, guid, name });
 }
 
-void InputSettings::joystickDisconnected(SDL_JoystickID id)
+void InputSettings::joystickDisconnected(SDL_JoystickID id, SDL_JoystickGUID guid)
 {
 }
 
-void InputSettings::joystickButton(SDL_JoystickID id, int button)
+void InputSettings::joystickButton(SDL_JoystickID id, SDL_JoystickGUID guid, int button)
 {
-   // TODO: Assign mAssignButtonType to key!
    if (mAssignButton) {
-      mAssignButton->setText(QString("Joystick %1 button %2").arg(id).arg(button));
+      auto index = mUi.controllerList->currentIndex().row();
+      auto &controller = mInputConfiguration.controllers[index];
+      auto &input = controller.inputs[static_cast<size_t>(mAssignButtonType)];
+      input.source = InputConfiguration::Input::JoystickButton;
+      input.id = button;
+      input.joystickInstanceId = id;
+      input.joystickGuid = guid;
+
+      mAssignButton->setText(inputToText(input));
       mAssignButton->setChecked(false);
    }
 }
 
-void InputSettings::joystickAxisMotion(SDL_JoystickID id, int axis, float value)
+void InputSettings::joystickAxisMotion(SDL_JoystickID id, SDL_JoystickGUID guid, int axis, float value)
 {
    if (value > -0.5f && value < 0.5) {
       // Ignore until axis has a decent value
       return;
    }
 
-   // TODO: Assign mAssignButtonType to key!
    if (mAssignButton) {
-      mAssignButton->setText(QString("Joystick %1 axis %2 %3").arg(id).arg(axis).arg(value < 0 ? "negative" : "positive"));
+      auto index = mUi.controllerList->currentIndex().row();
+      auto &controller = mInputConfiguration.controllers[index];
+      auto &input = controller.inputs[static_cast<size_t>(mAssignButtonType)];
+      input.source = InputConfiguration::Input::JoystickAxis;
+      input.id = axis;
+      input.joystickInstanceId = id;
+      input.joystickGuid = guid;
+      input.invert = (value < 0);
+
+      mAssignButton->setText(inputToText(input));
       mAssignButton->setChecked(false);
    }
 }
 
-void InputSettings::joystickHatMotion(SDL_JoystickID id, int hat, int value)
+void InputSettings::joystickHatMotion(SDL_JoystickID id, SDL_JoystickGUID guid, int hat, int value)
 {
    const char *direction = nullptr;
    if (value == SDL_HAT_UP) {
@@ -186,34 +298,47 @@ void InputSettings::joystickHatMotion(SDL_JoystickID id, int hat, int value)
    } else if (value == SDL_HAT_DOWN) {
       direction = "down";
    } else {
+      // Only allow one direction
       return;
    }
 
-   // TODO: Assign mAssignButtonType to key!
    if (mAssignButton) {
-      mAssignButton->setText(QString("Joystick %1 hat %2 %3").arg(id).arg(hat).arg(direction));
+      auto index = mUi.controllerList->currentIndex().row();
+      auto &controller = mInputConfiguration.controllers[index];
+      auto &input = controller.inputs[static_cast<size_t>(mAssignButtonType)];
+      input.source = InputConfiguration::Input::JoystickHat;
+      input.id = hat;
+      input.hatValue = value;
+      input.joystickInstanceId = id;
+      input.joystickGuid = guid;
+
+      mAssignButton->setText(inputToText(input));
       mAssignButton->setChecked(false);
    }
 }
 
-void InputSettings::controllerTypeChanged(int index)
+void InputSettings::controllerTypeChanged(int typeIndex)
 {
    mUi.buttonList->setUpdatesEnabled(false);
    qDeleteAll(mUi.buttonList->findChildren<QWidget*>("", Qt::FindDirectChildrenOnly));
    mUi.buttonList->setUpdatesEnabled(true);
 
-   if (index == -1) {
+   if (typeIndex == -1) {
       return;
    }
 
-   auto type = static_cast<Controller::Type>(mUi.controllerType->itemData(index).toInt());
+   auto type = static_cast<ControllerType>(mUi.controllerType->itemData(typeIndex).toInt());
+   auto index = mUi.controllerList->currentIndex().row();
+   auto &controller = mInputConfiguration.controllers[index];
+   controller.type = type;
    mUi.buttonList->setUpdatesEnabled(false);
 
-   if (type == Controller::Gamepad) {
+   if (type == ControllerType::Gamepad) {
       auto buttonLayout = reinterpret_cast<QFormLayout *>(mUi.buttonList->layout());
       auto addButton = [&](ButtonType type)
       {
-         auto button = new QPushButton("");
+         auto &input = controller.inputs[static_cast<size_t>(type)];
+         auto button = new QPushButton(inputToText(input));
          button->setCheckable(true);
          connect(button, &QPushButton::toggled, std::bind(&InputSettings::assignButton, this, button, type));
          buttonLayout->addRow(getButtonName(type), button);
@@ -248,4 +373,24 @@ void InputSettings::controllerTypeChanged(int index)
    }
 
    mUi.buttonList->setUpdatesEnabled(true);
+}
+
+void InputSettings::buttonBoxClicked(QAbstractButton *button)
+{
+   auto role = mUi.buttonBox->buttonRole(button);
+   if (role == QDialogButtonBox::AcceptRole ||
+       role == QDialogButtonBox::ApplyRole) {
+      mInputDriver->updateInputConfiguration(mInputConfiguration);
+   }
+
+   if (role == QDialogButtonBox::ResetRole) {
+      mInputConfiguration = mInputDriver->getInputConfiguration();
+      updateControllerListFromConfiguration();
+   }
+
+   if (role == QDialogButtonBox::AcceptRole) {
+      accept();
+   } else if (role == QDialogButtonBox::RejectRole) {
+      reject();
+   }
 }
