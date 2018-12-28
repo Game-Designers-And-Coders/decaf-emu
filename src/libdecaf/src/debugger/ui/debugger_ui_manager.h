@@ -195,7 +195,7 @@ private:
    uint32_t mLastNia = 0;
    bool mHasBeenActivated = false;
    bool mWasPaused = false;
-   bool mVisible = false;
+   bool mVisible = true;
    std::map<WindowID, Window *> mWindows;
    std::map<WindowID, HotKey> mWindowHotKeys;
 
